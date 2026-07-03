@@ -8,6 +8,7 @@ from typing import Any, Final
 from ariston.const import (
     ARISTON_BUS_ERRORS,
     ConsumptionProperties,
+    ConsumptionTimeInterval,
     ConsumptionType,
     CustomDeviceFeatures,
     DeviceAttribute,
@@ -383,6 +384,30 @@ ARISTON_SENSOR_TYPES: list[AristonSensorEntityDescription] = [
         ],
         coordinator=ENERGY_COORDINATOR,
         get_native_value=lambda entity: entity.device.domestic_hot_water_total_energy_consumption,
+        get_last_reset=lambda entity: entity.device.consumption_sequence_last_changed_utc,
+    ),
+    AristonSensorEntityDescription(
+        key="Central cooling total energy consumption",
+        name=f"{NAME} central cooling total energy consumption",
+        icon="mdi:cash",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_features=[
+            DeviceFeatures.HAS_METERING,
+            ConsumptionType.CENTRAL_COOLING_TOTAL_ENERGY.name,
+        ],
+        coordinator=ENERGY_COORDINATOR,
+        get_native_value=lambda entity: next(
+            (
+                sequence["v"][-1]
+                for sequence in entity.device.consumptions_sequences
+                if sequence["k"] == ConsumptionType.CENTRAL_COOLING_TOTAL_ENERGY.value
+                and sequence["p"] == ConsumptionTimeInterval.LAST_DAY.value
+            ),
+            None,
+        ),
         get_last_reset=lambda entity: entity.device.consumption_sequence_last_changed_utc,
     ),
     AristonSensorEntityDescription(
